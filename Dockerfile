@@ -1,4 +1,4 @@
-FROM jenkins:latest
+FROM jenkins:1.554.3
 
 USER root
 
@@ -9,27 +9,24 @@ RUN \
   apt-get update && \
   apt-get install sbt 
 
-# Get the Jenkins plugins we need and install them
-RUN mkdir -p /tmp/WEB-INF/plugins
+# Install vagrant
 
-# Github-API plugin
+# RUN cat /etc/*-release
 
-RUN curl -L http://updates.jenkins-ci.org/latest/github-api.hpi -o /tmp/WEB-INF/plugins/github-api.hpi
+RUN apt-get install -yq vagrant
 
-# Github OAuth plugin
-RUN curl -L http://updates.jenkins-ci.org/latest/github-oauth.hpi -o /tmp/WEB-INF/plugins/github-oauth.hpi 
+# we need virtualbox
+# RUN apt-get install -yq vbox
 
-# Github pull-request plugin
-RUN curl -L http://updates.jenkins-ci.org/latest/ghprb.hpi -o /tmp/WEB-INF/plugins/ghprb.hpi 
-
-# SBT plugin
-RUN curl -L http://updates.jenkins-ci.org/latest/sbt.hpi -o /tmp/WEB-INF/plugins/sbt.hpi 
-
-# Grow the Jenkins WAR with the plugins
-RUN cd /tmp; zip --grow /usr/share/jenkins/jenkins.war WEB-INF/* 
+# Install protobuf
 
 RUN apt-get install -yq protobuf-compiler libprotobuf-java
 
-USER jenkins # drop back to the regular jenkins user - good practice
+# Get the Jenkins plugins we need and install them
+
+COPY plugins.txt /usr/share/jenkins/plugins.txt
+RUN /usr/local/bin/plugins.sh /usr/share/jenkins/plugins.txt
+
+USER jenkins 
 
 ENTRYPOINT ["/usr/local/bin/jenkins.sh"]
