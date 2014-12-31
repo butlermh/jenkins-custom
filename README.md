@@ -3,6 +3,8 @@ jenkins-custom
 
 Custom Dockerfile for Jenkins building Scala projects hosted on Github
 
+It is based on `butlermh/jenkins`. This is not a custom version of Jenkins - it's the version 
+
 To build
 
     docker build -t="butlermh/custom-jenkins" .
