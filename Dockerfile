@@ -28,11 +28,11 @@ RUN mkdir -p /usr/share/jenkins/ref/init.groovy.d
 
 COPY init.groovy /usr/share/jenkins/ref/init.groovy.d/tcp-slave-angent-port.groovy
 
-ENV JENKINS_VERSION 1.595
+ENV JENKINS_VERSION 1.596
 
 # could use ADD but this one does not check Last-Modified header 
 # see https://github.com/docker/docker/issues/8331
-RUN curl -L http://mirrors.jenkins-ci.org/war/1.595/jenkins.war -o /usr/share/jenkins/jenkins.war
+RUN curl -L http://mirrors.jenkins-ci.org/war/latest/jenkins.war -o /usr/share/jenkins/jenkins.war
 
 ENV JENKINS_UC https://updates.jenkins-ci.org
 RUN chown -R jenkins "$JENKINS_HOME" /usr/share/jenkins/ref
@@ -65,6 +65,7 @@ RUN dpkg -i virtualbox_4.3.18-dfsg-1_amd64.deb
 RUN rm virtualbox_4.3.18-dfsg-1_amd64.deb
 RUN apt-get update
 RUN apt-get install virtualbox
+RUN apt-get install -yq git
 
 # Install protobuf
 
