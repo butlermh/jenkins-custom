@@ -1,12 +1,11 @@
-# FROM jenkins:1.584
+FROM ubuntu:14.04
+MAINTAINER markhenrybutler@gmail.com
+ENV REFRESHED_AT 2015-01-10
 
-# The version of Jenkins we need isn't on Docker hub yet ...
-# Replace this with an include when it is ...
-
-######################################
-
-FROM java:openjdk-7u65-jdk
-
+RUN apt-get update -qq && apt-get install -qqy curl
+RUN curl https://get.docker.io/gpg | apt-key add -
+RUN echo deb http://get.docker.io/ubuntu docker main > /etc/apt/sources.list.d/docker.list
+RUN apt-get update -qq && apt-get install -qqy iptables ca-certificates lxc openjdk-7-jdk git-core lxc-docker
 RUN apt-get update && apt-get install -y wget git curl zip && rm -rf /var/lib/apt/lists/*
 
 ENV JENKINS_HOME /var/jenkins_home
@@ -14,17 +13,19 @@ ENV JENKINS_HOME /var/jenkins_home
 # Jenkins is ran with user `jenkins`, uid = 1000
 # If you bind mount a volume from host/vloume from a data container, 
 # ensure you use same uid
-RUN useradd -d "$JENKINS_HOME" -u 1000 -m -s /bin/bash jenkins
+
+RUN useradd -g docker -d "$JENKINS_HOME" -u 1000 -m -s /bin/bash jenkins
 
 # Jenkins home directoy is a volume, so configuration and build history 
 # can be persisted and survive image upgrades
+
 VOLUME /var/jenkins_home
 
 # `/usr/share/jenkins/ref/` contains all reference configuration we want 
 # to set on a fresh new installation. Use it to bundle additional plugins 
 # or config file with your custom jenkins Docker image.
-RUN mkdir -p /usr/share/jenkins/ref/init.groovy.d
 
+RUN mkdir -p /usr/share/jenkins/ref/init.groovy.d
 
 COPY init.groovy /usr/share/jenkins/ref/init.groovy.d/tcp-slave-angent-port.groovy
 
@@ -32,6 +33,7 @@ ENV JENKINS_VERSION 1.596
 
 # could use ADD but this one does not check Last-Modified header 
 # see https://github.com/docker/docker/issues/8331
+
 RUN curl -L http://mirrors.jenkins-ci.org/war/latest/jenkins.war -o /usr/share/jenkins/jenkins.war
 
 ENV JENKINS_UC https://updates.jenkins-ci.org
@@ -43,7 +45,7 @@ EXPOSE 8080
 # will be used by attached slave agents:
 EXPOSE 50000
 
-##################################
+# Install SBT
 
 RUN \
   curl -L -o sbt-0.13.7.deb https://dl.bintray.com/sbt/debian/sbt-0.13.7.deb && \
@@ -52,19 +54,8 @@ RUN \
   apt-get update && \
   apt-get install sbt
 
-# Install vagrant
+# Install git
 
-# RUN cat /etc/*-release
-
-RUN apt-get install -yq vagrant
-
-RUN apt-get install -yq libgsoap5 libpython2.7 libsdl1.2debian libvncserver0 libvpx1 libxmu6 
-
-RUN curl -L -o virtualbox_4.3.18-dfsg-1_amd64.deb http://ftp.us.debian.org/debian/pool/contrib/v/virtualbox/virtualbox_4.3.18-dfsg-1_amd64.deb
-RUN dpkg -i virtualbox_4.3.18-dfsg-1_amd64.deb
-RUN rm virtualbox_4.3.18-dfsg-1_amd64.deb
-RUN apt-get update
-RUN apt-get install virtualbox
 RUN apt-get install -yq git
 
 # Install protobuf
