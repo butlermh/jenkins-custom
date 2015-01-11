@@ -29,12 +29,13 @@ RUN mkdir -p /usr/share/jenkins/ref/init.groovy.d
 
 COPY init.groovy /usr/share/jenkins/ref/init.groovy.d/tcp-slave-angent-port.groovy
 
-ENV JENKINS_VERSION 1.580.2
+ENV JENKINS_VERSION 1.596
+ENV JENKINS_MIRROR http://mirrors.jenkins-ci.org
 
 # could use ADD but this one does not check Last-Modified header 
 # see https://github.com/docker/docker/issues/8331
 
-RUN curl -L http://mirrors.jenkins-ci.org/war-stable/1.580.2/jenkins.war -o /usr/share/jenkins/jenkins.war
+RUN curl -L http://mirrors.jenkins-ci.org/war/1.596/jenkins.war -o /usr/share/jenkins/jenkins.war
 
 ENV JENKINS_UC https://updates.jenkins-ci.org
 RUN chown -R jenkins "$JENKINS_HOME" /usr/share/jenkins/ref
@@ -68,7 +69,7 @@ RUN wget http://repo1.maven.org/maven2/org/codehaus/sonar/runner/sonar-runner-di
     rm sonar-runner*zip && \
     mv sonar-runner* sonar-runner
 
-USER jenkins
+# USER jenkins
 
 # Get the Jenkins plugins we need and install them
 

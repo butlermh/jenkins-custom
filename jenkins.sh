@@ -1,5 +1,41 @@
 #! /bin/bash
 
+# First, make sure that cgroups are mounted correctly.
+CGROUP=/sys/fs/cgroup
+
+[ -d $CGROUP ] ||
+  mkdir $CGROUP
+
+mountpoint -q $CGROUP ||
+  mount -n -t tmpfs -o uid=0,gid=0,mode=0755 cgroup $CGROUP || {
+    echo "Could not make a tmpfs mount. Did you use -privileged?"
+    exit 1
+  }
+
+# Mount the cgroup hierarchies exactly as they are in the parent system.
+for SUBSYS in $(cut -d: -f2 /proc/1/cgroup)
+do
+  [ -d $CGROUP/$SUBSYS ] || mkdir $CGROUP/$SUBSYS
+  mountpoint -q $CGROUP/$SUBSYS ||
+    mount -n -t cgroup -o $SUBSYS cgroup $CGROUP/$SUBSYS
+done
+
+# Now, close extraneous file descriptors.
+pushd /proc/self/fd
+for FD in *
+do
+  case "$FD" in
+  # Keep stdin/stdout/stderr
+  [012])
+    ;;
+  # Nuke everything else
+  *)
+    eval exec "$FD>&-"
+    ;;
+  esac
+done
+popd
+
 # Copy files from /usr/share/jenkins/ref into /var/jenkins_home
 # So the initial JENKINS-HOME is set with expected content. 
 # Don't override, as this is just a reference setup, and use from UI 
@@ -20,12 +56,13 @@ copy_reference_file() {
 export -f copy_reference_file
 find /usr/share/jenkins/ref/ -type f -exec bash -c 'copy_reference_file {}' \;
 
+docker -d &
+
 # if `docker run` first argument start with `--` the user is passing jenkins launcher arguments
 if [[ $# -lt 1 ]] || [[ "$1" == "--"* ]]; then
    exec java $JAVA_OPTS -jar /usr/share/jenkins/jenkins.war $JENKINS_OPTS "$@"
 fi
 
-docker -d &
 # As argument is not jenkins, assume user want to run his own process, for sample a `bash` shell to explore this image
 exec "$@"
 
